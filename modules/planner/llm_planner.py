@@ -1,21 +1,32 @@
 import openai
+from cloper.planner.tasks import TableTopPickPlace
 
 
 class LLMPlanner(object):
-    def __init__(self, params):
+    def __init__(self, task, params):
+        self.task = task
+        self.api_key = params['key']
         self.overwrite_cache = params['overwrite_cache']
+        self.scene_descriptor = ""
         if self.overwrite_cache:
             self.LLM_CACHE = {}
         else :
             self.LLM_CACHE = None
+        
+    def update_scene_descriptor(self, descriptor):
+        self.scene_descriptor = descriptor
 
-    def get_scene_descriptor():
+    def code_to_steps(codeplan : str):
         pass
 
-    def code_to_steps():
-        pass
+    def generate_codeplan(self, instruction : str):
+        current_task = instruction.replace(' ','_')
+        current_task += '():'
+        prompt = self.task.actions +  self.scene_descriptor + self.task.samples + current_task
 
-    def gpt3_call(self, engine="text-ada-001", prompt="", max_tokens=128, temperature=0, 
+
+
+    def gpt3_call(self, engine="text-davinci-002", prompt="", max_tokens=128, temperature=0, 
                 logprobs=1, echo=False):
         full_query = ""
         for p in prompt:

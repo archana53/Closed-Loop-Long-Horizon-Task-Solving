@@ -1,0 +1,6 @@
+README.md
+setup.py
+cloper.egg-info/PKG-INFO
+cloper.egg-info/SOURCES.txt
+cloper.egg-info/dependency_links.txt
+cloper.egg-info/top_level.txt

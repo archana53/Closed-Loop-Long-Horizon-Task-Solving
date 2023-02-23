@@ -1,4 +1,10 @@
-class TableTopPickPlace(object):
+class Task(object):
+    def __init__(self):
+        self.actions = None
+        self.samples = None
+
+
+class TableTopPickPlace(Task):
     def __init__(self):
         self.actions = ["pick <obj>", "place <obj> <loc>", "place <obj> <obj>"]
         self.samples =  [
@@ -17,5 +23,3 @@ class TableTopPickPlace(object):
         #4 done()
         """
         ]
-    def get_descriptor():
-        pass
