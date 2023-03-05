@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow.compat.v1 as tf
 import torch
+from modules.planner.constants import multiple_templates, single_template
 from PIL import Image, ImageDraw, ImageFont
+from scipy.special import softmax
 from tqdm import tqdm
 
 
@@ -11,20 +13,27 @@ class ViLD(object):
     def __init__(self, params):
         # Defining ViLD Parameters
         self.params = params
+        self.prompt_engineering = True
+        self.this_is_prefix = True
+        self.temperature = (100.0,)
+        self.use_softmax = False
         # Loading saved model
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
         self.session = tf.Session(
             graph=tf.Graph(), config=tf.ConfigProto(gpu_options=gpu_options)
         )
         saved_model_dir = "./weights/image_path_v2"
-        _ = tf.saved_model.loader.load(self.session, ["serve"], saved_model_dir)
+        _ = tf.saved_model.load(self.session, ["serve"], saved_model_dir)
 
         # Defining Templates
-        self.templates = ["a photo of {article} {}."]
+        if self.prompt_engineering:
+            self.templates = multiple_templates
+        else:
+            self.templates = single_template
 
         # Initialising CLIP Model
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32")
-        self.clip_model.cuda().eval()
+        self.clip_model.eval()
 
     def article(self, name):
         return "an" if name[0] in "aeiou" else "a"
@@ -51,16 +60,23 @@ class ViLD(object):
                     )
                     for template in self.templates
                 ]
-            texts = clip.tokenize(texts)  # tokenize
-            if run_on_gpu:
-                texts = texts.cuda()
-            text_embeddings = self.clip_model.encode_text(
-                texts
-            )  # embed with text encoder
-            text_embeddings /= text_embeddings.norm(dim=-1, keepdim=True)
-            text_embedding = text_embeddings.mean(dim=0)
-            text_embedding /= text_embedding.norm()
-            all_text_embeddings.append(text_embedding)
+                if self.this_is_prefix:
+                    texts = [
+                        "This is " + text
+                        if text.startswith("a") or text.startswith("the")
+                        else text
+                        for text in texts
+                    ]
+                texts = clip.tokenize(texts)  # tokenize
+                if run_on_gpu:
+                    texts = texts.cuda()
+                text_embeddings = self.clip_model.encode_text(
+                    texts
+                )  # embed with text encoder
+                text_embeddings /= text_embeddings.norm(dim=-1, keepdim=True)
+                text_embedding = text_embeddings.mean(dim=0)
+                text_embedding /= text_embedding.norm()
+                all_text_embeddings.append(text_embedding)
             all_text_embeddings = torch.stack(all_text_embeddings, dim=1)
             if run_on_gpu:
                 all_text_embeddings = all_text_embeddings.cuda()
@@ -191,7 +207,7 @@ class ViLD(object):
         # Filter out invalid rois (nmsed rois)
         valid_indices = np.where(
             np.logical_and(
-                np.isin(np.arange(len(roi_scores), dtype=np.int), nmsed_indices),
+                np.isin(np.arange(len(roi_scores), dtype=np.int32), nmsed_indices),
                 np.logical_and(
                     np.logical_not(np.all(roi_boxes == 0.0, axis=-1)),
                     np.logical_and(
@@ -217,7 +233,10 @@ class ViLD(object):
         text_features = self.build_text_embedding(categories)
 
         raw_scores = detection_visual_feat.dot(text_features.T)
-        scores_all = np.softmax(self.temperature * raw_scores, axis=-1)
+        if self.use_softmax:
+            scores_all = softmax(self.temperature * raw_scores, axis=-1)
+        else:
+            scores_all = raw_scores
 
         indices = np.argsort(
             -np.max(scores_all, axis=1)
@@ -265,9 +284,9 @@ if __name__ == "__main__":
         "pink bowl",
         "cyan bowl",
         "brown bowl",
-        "gray bowl",
+        "gray_bowl",
     ]
-    image_path = "sample.png"
+    image_path = "/nethome/akutumbaka3/files/dlm_project/data/images/tmp.jpg"
 
     # @markdown ViLD settings.
     category_name_string = ";".join(category_names)
@@ -293,4 +312,3 @@ if __name__ == "__main__":
         category_name_string,
         prompt_swaps=prompt_swaps,
     )
-    print(found_objects)
