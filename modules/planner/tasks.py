@@ -6,14 +6,15 @@ class Task(object):
 
 class TableTopPickPlace(Task):
     def __init__(self):
+        super(TableTopPickPlace, self).__init__()
+
         self.actions = ["pick <obj>", "place <obj> <loc>", "place <obj> <obj>"]
-        self.samples =  [
-        """
+        self.samples = [
+            """
         def place_red_block_on_blue_block():
         #1 check whether blue block does not have anything on top
-        assert('blue block' is 'free')
-            else : pick(block on blue block)
-                place(next to blue block)
+        assert('blue block has nothing on top')
+
         #2 pick red block
             pick('red block')
 
@@ -23,3 +24,12 @@ class TableTopPickPlace(Task):
         #4 done()
         """
         ]
+
+    def get_actions(self):
+        actions_string = "from actions import "
+        actions_string += ",".join(self.actions)
+        return actions_string
+
+    def get_samples(self):
+        samples_string = "\n".join(self.samples)
+        return samples_string
