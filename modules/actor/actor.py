@@ -98,10 +98,10 @@ def get_random_pose(env, obj_size):
     rot = utils.eulerXYZ_to_quatXYZW((0, 0, theta))
     return pos, rot
 
-def setup_environment(object_list):
+def setup_environment(object_list, disp=False):
     env = Environment(
         './environments/assets/',
-        disp=True,
+        disp=disp,
         shared_memory=False,
         hz=480,
         # record_cfg=cfg['record']
@@ -142,9 +142,9 @@ def setup_environment(object_list):
         input("Enter to continue")
     return env, task, obs, objects
 
-def actor(lang_goals, object_list = None, env = None, task = None, obs = None, obj_info = None):
+def actor(lang_goals, object_list = None, env = None, task = None, obs = None, obj_info = None, disp = False):
     if object_list and env == None:
-        env, task, obs, obj_info = setup_environment(object_list)
+        env, task, obs, obj_info = setup_environment(object_list, disp=disp)
     agent = task.oracle(env)
     for line in lang_goals.splitlines():
         if 'place(' in line:
