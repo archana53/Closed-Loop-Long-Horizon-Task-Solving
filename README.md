@@ -6,4 +6,4 @@ gsutil cp -r gs://cloud-tpu-checkpoints/detection/projects/vild/colab/image_path
 
 #VQA weights
 
-https://huggingface.co/SohanAnisetty/ofa-vqa-tiny
+https://huggingface.co/SohanAnisetty/ofa-vqa-base
