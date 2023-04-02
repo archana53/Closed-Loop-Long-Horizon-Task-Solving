@@ -2,6 +2,7 @@ import argparse
 
 import openai
 from modules.planner.tasks import TableTopPickPlace, Task
+from data.prompts.TableTopManipulation import prompt
 
 
 class LLMPlanner(object):
@@ -23,45 +24,33 @@ class LLMPlanner(object):
     def code_to_steps(codeplan: str):
         pass
 
-    def generate_codeplan(self, instruction: str):
-        task = instruction.replace(" ", "_")
-        task += "():"
-        prompt = (
-            self.task.get_actions()
-            + self.scene_descriptor
-            + self.task.get_samples()
-            + task
-        )
-        response = self.gpt3_call(prompt=prompt)
-        codeplan = task + response["choices"][0]["text"]
-        print(codeplan)
+    def generate_codeplan(self, task: str):
+        prompt = self.task.get_prompt()
+        response = self.gpt3_call(prompt=prompt, task=instruction)
+        codeplan = response["choices"][0]["message"]["content"]
         return codeplan
 
     def gpt3_call(
         self,
-        engine="text-davinci-002",
+        model="gpt-3.5-turbo",
         prompt="",
+        task="",
         max_tokens=256,
         temperature=0,
         logprobs=1,
         echo=False,
     ):
-        full_query = ""
-        for p in prompt:
-            full_query += p
-        id = tuple((engine, full_query, max_tokens, temperature, logprobs, echo))
-        if id in self.LLM_CACHE.keys():
-            response = self.LLM_CACHE[id]
-        else:
-            response = openai.Completion.create(
-                engine=engine,
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                logprobs=logprobs,
-                echo=echo,
-            )
-            self.LLM_CACHE[id] = response
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "user", "content": self.prompt},
+                {
+                    "role": "user",
+                    "content": "Based on the examples provided above, write python code to "
+                    + task,
+                },
+            ],
+        )
         return response
 
 
@@ -75,8 +64,6 @@ if __name__ == "__main__":
     params = {"key": args.openai_key, "overwrite_cache": args.cache}
     our_planner = LLMPlanner(TableTopPickPlace, params)
     instruction = "stack all blocks on blue block"
-    objects = (
-        """\n objects = ["red block", "blue block", "yellow_block", "green_block"] \n"""
-    )
+    objects = """objects = ["red block", "blue block", "yellow_block", "green_block"] \n"""
     our_planner.update_scene_descriptor(objects)
     our_planner.generate_codeplan(instruction)

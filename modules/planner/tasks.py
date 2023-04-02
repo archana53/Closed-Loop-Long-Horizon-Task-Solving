@@ -1,3 +1,8 @@
+from data.prompts.TableTopManipulation import (
+    Prompt as TableTopManipulationPrompt,
+)
+
+
 class Task(object):
     def __init__(self):
         self.actions = None
@@ -8,21 +13,26 @@ class TableTopPickPlace(Task):
     def __init__(self):
         super(TableTopPickPlace, self).__init__()
 
-        self.actions = ["pick <obj>", "place <obj> <loc>", "place <obj> <obj>"]
+        self.actions = [
+            "pick",
+            "place",
+        ]
         self.samples = [
-            """
-        def place_red_block_on_blue_block():
-        #1 check whether blue block does not have anything on top
-        assert('blue block has nothing on top')
+            """def stack_all_remaining_blocks_on_red_block():
+    #Identify the current block to stack on
+    object_to_stack_on = 'red_block'
+    for i, current_object in enumerate(objects):
+        if (current_object != 'red_block'):
+            #Pick current object
+            pick(current_object)
 
-        #2 pick red block
-            pick('red block')
-
-        #3 place on the blue block
-            place('red block','blue block')
-
-        #4 done()
-        """
+            #Place on the object on top
+            place(current_object, object_to_stack_on)
+            
+            #Update the current block to stack on to the object on top
+            object_to_stack_on = current_object
+    #Done
+        """,
         ]
 
     def get_actions(self):
@@ -33,3 +43,6 @@ class TableTopPickPlace(Task):
     def get_samples(self):
         samples_string = "\n".join(self.samples)
         return samples_string
+
+    def get_prompt(self):
+        return TableTopManipulationPrompt
