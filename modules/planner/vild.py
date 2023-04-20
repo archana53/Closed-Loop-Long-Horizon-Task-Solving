@@ -8,7 +8,6 @@ from PIL import Image, ImageDraw, ImageFont
 from scipy.special import softmax
 from tqdm import tqdm
 
-
 class ViLD(object):
     def __init__(self, params):
         # Defining ViLD Parameters

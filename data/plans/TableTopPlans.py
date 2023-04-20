@@ -85,3 +85,30 @@ for i, block in enumerate(blocks):
     put_first_on_second(block, target_corner)
     """,
 }
+
+
+from control_actions import put_first_on_second
+from plan_actions import get_object_names
+from reasoning_actions import find_object_related_to_obj,  find_cornor_related_to_obj
+
+#Write a code to put each block in a bowl of another color
+
+#Put each block in a bowl of another color
+
+#Get all blocks and all bowls
+objects = get_object_names()
+blocks = [obj for obj in objects if 'block' in obj]
+bowls = [obj for obj in objects if 'bowl' in obj]
+
+#For each block, put it in a bowl of a different color
+for i, block in enumerate(blocks):
+    #Get the color of the block
+    block_color = block.split(' ')[0]
+    
+    #Find the bowl with a different color
+    for bowl in bowls:
+        bowl_color = bowl.split(' ')[0]
+        if bowl_color != block_color:
+            #Place the block in the bowl
+            put_first_on_second(block, bowl)
+            break
